@@ -4,28 +4,33 @@ def load_data(filepath):
     """Charge les données depuis un fichier CSV."""
     return pd.read_csv(filepath)
 
-def preprocess_data(df):
-    """Nettoie et transforme les données pour l'entraînement du modèle."""
-    
-    # Supprimer 'id' car il ne sert pas au modèle
+def preprocess_data(df, is_train=False):
+    """Nettoie et transforme les données.
+    - is_train=True : conserve `trip_duration` pour l'entraînement
+    - is_train=False : supprime `trip_duration` pour l'inférence
+    """
+
+    # Supprimer la colonne 'id'
     df = df.drop(columns=["id"], errors="ignore")
-    
-    # Convertir 'pickup_datetime' et 'dropoff_datetime' en datetime
-    df["pickup_datetime"] = pd.to_datetime(df["pickup_datetime"])
-    df["dropoff_datetime"] = pd.to_datetime(df["dropoff_datetime"])
-    
-    # Extraire des features temporelles utiles
-    df["pickup_hour"] = df["pickup_datetime"].dt.hour
-    df["dropoff_hour"] = df["dropoff_datetime"].dt.hour
 
-    # Supprimer les colonnes originales datetime
-    df = df.drop(columns=["pickup_datetime", "dropoff_datetime"], errors="ignore")
-    
-    # Convertir 'store_and_fwd_flag' en numérique (0 = 'N', 1 = 'Y')
-    df["store_and_fwd_flag"] = df["store_and_fwd_flag"].map({"N": 0, "Y": 1})
+    # Convertir 'pickup_datetime' si elle est présente
+    if "pickup_datetime" in df.columns:
+        df["pickup_hour"] = pd.to_datetime(df["pickup_datetime"]).dt.hour
+        df = df.drop(columns=["pickup_datetime"], errors="ignore")
 
-    # Vérifier que toutes les colonnes sont bien numériques
-    print("Types de données après transformation :")
-    print(df.dtypes)
+    # Convertir 'dropoff_datetime' si elle est présente
+    if "dropoff_datetime" in df.columns:
+        df["dropoff_hour"] = pd.to_datetime(df["dropoff_datetime"]).dt.hour
+        df = df.drop(columns=["dropoff_datetime"], errors="ignore")
+    else:
+        df["dropoff_hour"] = 0  # Ajout d'une colonne factice
+
+    # Convertir 'store_and_fwd_flag' en numérique
+    if "store_and_fwd_flag" in df.columns:
+        df["store_and_fwd_flag"] = df["store_and_fwd_flag"].map({"N": 0, "Y": 1})
+
+    # ⚠️ Supprimer 'trip_duration' uniquement pour l'inférence
+    if not is_train:
+        df = df.drop(columns=["trip_duration"], errors="ignore")
 
     return df

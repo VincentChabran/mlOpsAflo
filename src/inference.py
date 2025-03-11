@@ -1,6 +1,13 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import joblib
 import pandas as pd
 import yaml
+from src.utils import load_data  
+from src.preprocessing import preprocess_data  # Import du prétraitement
+
 
 # Charger la configuration
 with open("config.yml", "r") as f:
@@ -9,40 +16,10 @@ with open("config.yml", "r") as f:
 # Charger le modèle
 model = joblib.load(config["model_path"])
 
-# Charger les données de test
-df_test = pd.read_csv("data/test.csv")
+df_test = load_data("test")  # On charge les données de test
 
-# Nettoyer les noms de colonnes (supprimer les espaces cachés)
-df_test.columns = df_test.columns.str.strip()
-
-# Vérifier les colonnes disponibles
-print("Colonnes disponibles après nettoyage :", df_test.columns.tolist())
-
-# Vérifier si 'pickup_datetime' est bien présent avant de l'utiliser
-if "pickup_datetime" in df_test.columns:
-    df_test["pickup_hour"] = pd.to_datetime(df_test["pickup_datetime"]).dt.hour
-    df_test = df_test.drop(columns=["pickup_datetime"], errors="ignore")
-else:
-    print("⚠️ Attention : 'pickup_datetime' non trouvé dans les données de test !")
-
-# Vérifier si 'dropoff_datetime' est présent avant de l'utiliser
-if "dropoff_datetime" in df_test.columns:
-    df_test["dropoff_hour"] = pd.to_datetime(df_test["dropoff_datetime"]).dt.hour
-    df_test = df_test.drop(columns=["dropoff_datetime"], errors="ignore")
-else:
-    print("⚠️ Attention : 'dropoff_datetime' non trouvé dans les données de test !")
-    df_test["dropoff_hour"] = 0  # Ajout d'une colonne factice pour éviter l'erreur
-
-# Convertir 'store_and_fwd_flag' en variable numérique (0 = 'N', 1 = 'Y')
-if "store_and_fwd_flag" in df_test.columns:
-    df_test["store_and_fwd_flag"] = df_test["store_and_fwd_flag"].map({"N": 0, "Y": 1})
-
-# Supprimer la colonne 'id' (inutile pour la prédiction)
-df_test = df_test.drop(columns=["id"], errors="ignore")
-
-# Vérifier si toutes les colonnes sont bien numériques avant la prédiction
-print("Types de données après prétraitement :")
-print(df_test.dtypes)
+# Appliquer le même prétraitement que pour l'entraînement
+df_test = preprocess_data(df_test)
 
 # Vérifier que toutes les features sont bien présentes avant de prédire
 expected_features = [

@@ -7,19 +7,24 @@ import joblib
 import yaml
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
-from src.preprocessing import load_data, preprocess_data  # Import des fonctions
+from src.utils import load_data  # Nouvelle version
+from src.preprocessing import preprocess_data  # Import du prétraitement
 
 # Charger la config
 with open("config.yml", "r") as f:
     config = yaml.safe_load(f)
 
-# Charger et prétraiter les données
-df = load_data(config["data_path"])
-df = preprocess_data(df)
+# Charger les données depuis la base SQLite
+df = load_data("train")  # On charge les données d'entraînement
+print("Colonnes disponibles après chargement :", df.columns.tolist())
+
+# Appliquer le prétraitement
+df = preprocess_data(df, is_train=True)
+print("Colonnes après prétraitement :", df.columns.tolist())
 
 # Définir les features et la target
 y = df["trip_duration"]
-X = df.drop(columns=["trip_duration"], errors="ignore")  # Supprime la target du dataset
+X = df.drop(columns=["trip_duration"], errors="ignore")
 
 # Vérifier la structure des données après prétraitement
 print("Aperçu des features après préprocessing :")
