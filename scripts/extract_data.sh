@@ -16,3 +16,8 @@ do
 done
 
 echo "✅ Extraction terminée !"
+
+# 🗄️  Stocker les données dans SQLite
+echo "🗄️ Stockage des données dans SQLite..."
+python src/fetch_and_store.py
+echo "✅ Données stockées dans SQLite !"

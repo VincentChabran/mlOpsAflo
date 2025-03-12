@@ -1,8 +1,8 @@
 #!/bin/bash
 
-echo "🚀 Initialisation du projet NYC Taxi Trip..."
+echo "🚀 Initialisation de l'environnement pour NYC Taxi Trip..."
 
-# Vérifier que Conda est installé
+# Vérifier si Conda est installé
 if ! command -v conda &> /dev/null
 then
     echo "❌ Conda n'est pas installé. Installe-le avant de continuer."
@@ -22,7 +22,7 @@ echo "🔄 Activation de l'environnement Conda..."
 source $(conda info --base)/etc/profile.d/conda.sh
 conda activate nyc_taxi
 
-# Installer les dépendances (sans réinstaller ce qui est déjà présent)
+# Installer les dépendances
 echo "📦 Installation des dépendances..."
 pip install --upgrade --requirement requirements.txt
 

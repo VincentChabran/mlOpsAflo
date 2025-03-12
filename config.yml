@@ -1,4 +1,7 @@
+api_url: "http://localhost:8000"
+
 db_path: "data/nyc_taxi.db"
+
 model_path: "models/taxi_model.pkl"
 random_state: 42
 test_size: 0.2
