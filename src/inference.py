@@ -19,7 +19,12 @@ model = joblib.load(config["model_path"])
 df_test = load_data("test")  # On charge les données de test
 
 # Appliquer le même prétraitement que pour l'entraînement
+print("🔍 Colonnes AVANT prétraitement (inférence) :", df_test.columns.tolist())
+
 df_test = preprocess_data(df_test)
+
+print("🔍 Types des colonnes après prétraitement (inférence) :\n", df_test.dtypes)
+print("🔍 Colonnes APRÈS prétraitement (inférence) :", df_test.columns.tolist())
 
 # Vérifier que toutes les features sont bien présentes avant de prédire
 expected_features = [

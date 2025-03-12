@@ -3,7 +3,6 @@ import requests
 import pandas as pd
 import sqlite3
 from sklearn.model_selection import train_test_split
-from src.utils import DB_PATH  # Import du prétraitement
 import yaml
 
 
@@ -63,7 +62,7 @@ def load_and_split_data():
 def save_to_sqlite(X_train, X_test, y_train, y_test):
     print("📦 Sauvegarde des données dans la base SQLite...")
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(config["db_path"])
 
     # Fusionner X et y avant sauvegarde
     train_data = X_train.copy()
@@ -77,7 +76,7 @@ def save_to_sqlite(X_train, X_test, y_train, y_test):
     test_data.to_sql(TABLE_TEST, conn, if_exists="replace", index=False)
 
     conn.close()
-    print(f"✅ Données enregistrées dans {DB_PATH} : {TABLE_TRAIN} & {TABLE_TEST}")
+    print(f"✅ Données enregistrées dans {config["db_path"]} : {TABLE_TRAIN} & {TABLE_TEST}")
 
 
 # 🔹 Exécuter tout le pipeline

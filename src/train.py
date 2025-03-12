@@ -20,8 +20,14 @@ df = load_data("train")  # On charge les données d'entraînement
 print("Colonnes disponibles après chargement :", df.columns.tolist())
 
 # Appliquer le prétraitement
+print("📊 Colonnes AVANT prétraitement (train) :", df.columns.tolist())
+
 df = preprocess_data(df, is_train=True)
-print("Colonnes après prétraitement :", df.columns.tolist())
+
+print("📊 Colonnes APRÈS prétraitement (train) :", df.columns.tolist())
+print("📊 Types des colonnes après prétraitement (train) :\n", df.dtypes)
+
+
 
 # Définir les features et la target
 y = df["trip_duration"]
