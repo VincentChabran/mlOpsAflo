@@ -28,8 +28,7 @@ pickup_latitude = st.sidebar.number_input("Latitude de départ", value=40.748)
 dropoff_longitude = st.sidebar.number_input("Longitude d'arrivée", value=-73.985)
 dropoff_latitude = st.sidebar.number_input("Latitude d'arrivée", value=40.748)
 store_and_fwd_flag = st.sidebar.selectbox("Store and Forward Flag", [0, 1])
-pickup_hour = st.sidebar.slider("Heure de départ", 0, 23, 12)
-dropoff_hour = st.sidebar.slider("Heure d'arrivée", 0, 23, 12)
+pickup_hour = st.sidebar.slider("Heure de départ", 0, 23, 12)  # ✅ Garde uniquement pickup_hour
 
 if st.sidebar.button("📊 Prédire la durée du trajet"):
     # Création du dictionnaire de données
@@ -41,8 +40,7 @@ if st.sidebar.button("📊 Prédire la durée du trajet"):
         "dropoff_longitude": dropoff_longitude,
         "dropoff_latitude": dropoff_latitude,
         "store_and_fwd_flag": store_and_fwd_flag,
-        "pickup_hour": pickup_hour,
-        "dropoff_hour": dropoff_hour
+        "pickup_hour": pickup_hour  # ❌ Supprime dropoff_hour (calculé automatiquement)
     }
 
     # Envoi de la requête POST à l'API
