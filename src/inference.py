@@ -6,7 +6,7 @@ import joblib
 import pandas as pd
 import yaml
 from src.utils import load_data  
-from src.preprocessing import preprocess_data  # Import du prétraitement
+from src.preprocessing import preprocess_data 
 
 
 # Charger la configuration
@@ -39,6 +39,7 @@ predictions = model.predict(df_test)
 
 # Ajouter les prédictions aux données
 df_test["predicted_trip_duration"] = predictions
+
 
 # Enregistrer les résultats dans un fichier CSV
 df_test.to_csv("data/predictions.csv", index=False)

@@ -14,6 +14,7 @@ from src.preprocessing import preprocess_data  # Import du prétraitement
 with open("config.yml", "r") as f:
     config = yaml.safe_load(f)
 
+
 # Charger les données depuis la base SQLite
 df = load_data("train")  # On charge les données d'entraînement
 print("Colonnes disponibles après chargement :", df.columns.tolist())
@@ -30,16 +31,19 @@ X = df.drop(columns=["trip_duration"], errors="ignore")
 print("Aperçu des features après préprocessing :")
 print(X.head())
 
+
 # Séparer les données en train/test
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=config["test_size"], random_state=config["random_state"]
 )
+
 
 # Définir et entraîner le modèle
 model = RandomForestRegressor(n_estimators=10, max_depth=5, random_state=42)
 print("Début de l'entraînement du modèle...")
 model.fit(X_train, y_train)
 print("Entraînement terminé.")
+
 
 # Sauvegarder le modèle
 joblib.dump(model, config["model_path"])
