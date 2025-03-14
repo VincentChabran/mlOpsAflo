@@ -3,34 +3,25 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from fastapi import FastAPI, HTTPException
-import joblib
-import pandas as pd
 from pydantic import BaseModel
-import uvicorn
-import sqlite3
 import yaml
-from src.utils import create_predictions_table
-from src.preprocessing import preprocess_data
+import sqlite3
+from src.TaxiTripModel import TaxiTripModel
 
-# Charger la configuration depuis config.yml
+# Charger la configuration
 with open("config.yml", "r") as f:
     config = yaml.safe_load(f)
 
-# Charger le modèle depuis le chemin de configuration
-MODEL_PATH = config["model_path"]
-try:
-    model = joblib.load(MODEL_PATH)
-except Exception as e:
-    raise RuntimeError(f"❌ Erreur lors du chargement du modèle : {str(e)}")
+# Initialiser le modèle
+model = TaxiTripModel()
 
 # Initialiser l'application FastAPI
 app = FastAPI(title="NYC Taxi Trip Prediction API")
 
-# Vérifier que la table SQLite `predictions` est bien créée
-create_predictions_table()
 
-
+# Définition du schéma de requête
 class TripRequest(BaseModel):
+    pickup_datetime: str
     vendor_id: int
     passenger_count: int
     pickup_longitude: float
@@ -38,67 +29,38 @@ class TripRequest(BaseModel):
     dropoff_longitude: float
     dropoff_latitude: float
     store_and_fwd_flag: int
-    pickup_hour: int  # ✅ On garde seulement pickup_hour (dropoff_hour sera généré)
 
 
 @app.get("/")
 def root():
-    return {"message": "🚖 Bienvenue sur l'API de prédiction NYC Taxi Trip !"}
+    return {"message": "🚖 Bienvenue sur l'API NYC Taxi Trip Prediction !"}
 
 
 @app.post("/predict")
 def predict_trip_duration(request: TripRequest):
     """
-    Endpoint pour faire une prédiction et sauvegarder le résultat en base de données.
+    Endpoint pour faire une prédiction sur la durée du trajet et estimer `dropoff_datetime`.
     """
     try:
-        # Convertir l'entrée en DataFrame
-        input_data = pd.DataFrame([request.dict()])
+        # Convertir l'entrée utilisateur en dictionnaire
+        input_data = request.dict()
 
-        # ✅ Appliquer le prétraitement (génère dropoff_hour)
-        input_data = preprocess_data(input_data, is_train=False)
+        # Faire la prédiction avec la méthode `predict_single_trip`
+        prediction_result = model.predict_single_trip(input_data)
 
-        # 🛠 Debugging pour voir les colonnes et types
-        print("🌍 Colonnes APRÈS prétraitement (API) :", input_data.columns.tolist())
-        print("🔍 Types des colonnes après prétraitement (API) :\n", input_data.dtypes)
-        print("🔍 Vérification des valeurs manquantes (API) :\n", input_data.isna().sum())
+        return {
+            "predicted_trip_duration": prediction_result["predicted_trip_duration"],
+            "estimated_dropoff_datetime": prediction_result["estimated_dropoff_datetime"]
+        }
 
-        # Vérifier si NaN avant la prédiction
-        if input_data.isna().sum().sum() > 0:
-            raise HTTPException(status_code=400, detail="❌ Données d'entrée invalides : présence de NaN après prétraitement.")
-
-        # Faire la prédiction
-        prediction = model.predict(input_data)[0]
-
-        # Sauvegarder dans SQLite
-        conn = sqlite3.connect(config["db_path"])
-        cursor = conn.cursor()
-
-        cursor.execute('''
-            INSERT INTO predictions (vendor_id, passenger_count, pickup_longitude, pickup_latitude,
-                                     dropoff_longitude, dropoff_latitude, store_and_fwd_flag,
-                                     pickup_hour, dropoff_hour, predicted_trip_duration)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            request.vendor_id, request.passenger_count, request.pickup_longitude, request.pickup_latitude,
-            request.dropoff_longitude, request.dropoff_latitude, request.store_and_fwd_flag,
-            request.pickup_hour, input_data["dropoff_hour"].iloc[0], prediction  # ✅ dropoff_hour ajouté
-        ))
-
-        conn.commit()
-        conn.close()
-
-        return {"predicted_trip_duration": prediction, "message": "Prédiction enregistrée en base"}
-    
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erreur lors de la prédiction : {str(e)}")
-
+        raise HTTPException(status_code=500, detail=f"❌ Erreur lors de la prédiction : {str(e)}")
 
 
 @app.get("/predictions")
 def get_predictions():
     """
-    📊 Récupère toutes les prédictions enregistrées en base de données.
+    Récupère toutes les prédictions enregistrées dans la base de données.
     """
     try:
         conn = sqlite3.connect(config["db_path"])
@@ -106,7 +68,6 @@ def get_predictions():
 
         cursor.execute("SELECT * FROM predictions ORDER BY id DESC")
         rows = cursor.fetchall()
-
         conn.close()
 
         # Construire la réponse sous forme de liste de dictionnaires
@@ -121,7 +82,9 @@ def get_predictions():
                 "dropoff_latitude": row[6],
                 "store_and_fwd_flag": row[7],
                 "pickup_hour": row[8],
-                "predicted_trip_duration": row[9]  # ⚠️ Indice mis à jour
+                "weekday": row[9],
+                "dropoff_hour": row[10],
+                "predicted_trip_duration": row[11]
             }
             for row in rows
         ]
@@ -134,4 +97,5 @@ def get_predictions():
 
 # ✅ Lancer l'API avec Uvicorn
 if __name__ == '__main__':
+    import uvicorn
     uvicorn.run("api.main:app", host="0.0.0.0", port=8000, reload=True)
